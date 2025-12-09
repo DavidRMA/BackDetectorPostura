@@ -1,0 +1,1 @@
+export { ThingSpeakService } from './thingSpeak';

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  
+  
+      <circle cx="32" cy="32" r="30" fill="#F1F5F9" opacity="0.5"/>
+      <g fill="#2563EB">
+        <rect x="29" y="13.312" width="8" height="5.312" rx="2.688"/>
+        <rect x="28" y="20.032" width="10.688" height="4.032" rx="1.984"/>
+        <rect x="27" y="25.344" width="13.312" height="4.032" rx="1.984"/>
+        <rect x="27" y="30.656" width="13.312" height="4.032" rx="1.984"/>
+        <rect x="28" y="36.032" width="10.688" height="4.032" rx="1.984"/>
+        <rect x="28" y="41.344" width="10.688" height="4.032" rx="1.984"/>
+        <rect x="29" y="46.656" width="8" height="4.032" rx="1.984"/>
+      </g>
+      <g stroke="#2563EB" opacity="0.6" stroke-width="1.5" stroke-linecap="round">
+        <line x1="16" y1="21.312" x2="24" y2="21.312"/>
+        <line x1="13.312" y1="28.032" x2="24" y2="28.032"/>
+        <line x1="14.656" y1="33.344" x2="24" y2="33.344"/>
+        <line x1="17.344" y1="38.656" x2="25.344" y2="38.656"/>
+        <line x1="40" y1="21.312" x2="48" y2="21.312"/>
+        <line x1="40" y1="28.032" x2="50.688" y2="28.032"/>
+        <line x1="40" y1="33.344" x2="49.344" y2="33.344"/>
+        <line x1="38.656" y1="38.656" x2="46.656" y2="38.656"/>
+      </g>
+      <g fill="#2563EB" opacity="0.8">
+        <circle cx="14.656" cy="28.032" r="1.6"/>
+        <circle cx="49.344" cy="28.032" r="1.6"/>
+        <circle cx="16" cy="33.344" r="1.6"/>
+        <circle cx="48" cy="33.344" r="1.6"/>
+      </g>
+    
+  
+</svg>

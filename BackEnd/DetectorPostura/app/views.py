@@ -20,6 +20,20 @@ class UsuarioViewSet(viewsets.ModelViewSet):
             'message': 'Usuarios obtenidos correctamente', 
             'data': serializer.data}, status=status.HTTP_200_OK)
     
+    @action(detail=True, methods=['get'], url_path='consultar_usuario')
+    def consultar_usuario(self, request, pk=None):
+        try:
+            usuario = self.get_object()
+            serializer = UsuarioSerializer(usuario)
+            return Response({
+                'message': 'Usuario obtenido correctamente',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        except Usuario.DoesNotExist:
+            return Response({
+                'error': f'Usuario con id {pk} no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
+    
     @action(detail=False, methods=['post'], url_path='crear_usuario')
     def crear_usuario(self, request):
         print("Creando usuario...")

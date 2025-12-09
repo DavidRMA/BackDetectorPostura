@@ -1,0 +1,1 @@
+export type { PostureData, HistoryRecord, UserProfile, PostureThresholds } from './posture';
