@@ -5,12 +5,15 @@
 #include "sensors/MPU6050Sensor.h"
 #include "posture/PostureEvaluator.h"
 #include "actuators/Vibrator.h"
+#include "posture/Calibration.h"
+#include <EEPROM.h>
 
 WiFiManager wifiManager;
 ApiClient apiClient;
 MPU6050Sensor mpu;
 PostureEvaluator postureEval;
 Vibrator vibrator(VIBRATOR_PIN);
+Calibration calibrator(mpu, postureEval);
 
 unsigned long lastTelemetry = 0;
 const unsigned long TELEMETRY_INTERVAL_MS = 1000; // cada 1s
@@ -38,20 +41,38 @@ void setup()
     Serial.println("ERROR: MPU6050 no detectado");
   }
 
-  // 3. Obtener configuración del backend (edad -> umbral, offsets, etc.)
-  DeviceRuntimeConfig cfg;
-  if (apiClient.fetchConfig(DEVICE_ID, cfg))
+  // 3. EEPROM (emulada) para calibración
+  EEPROM.begin(EEPROM_SIZE); // mismo tamaño que en Calibration.cpp
+
+  // 4. Intentar cargar calibración previa
+  bool hasCalib = calibrator.loadOffsetsFromEEPROM();
+
+  if (!hasCalib)
   {
-    // Config trae: edad_usuario, threshold_deg, offsetX, offsetY
-    postureEval.setAge(cfg.age);
-    postureEval.setThreshold(cfg.thresholdDeg);
-    postureEval.setOffsets(cfg.offsetX, cfg.offsetY);
+    // Si no había calibración guardada, hacemos una nueva
+    calibrator.runCalibration();
+    calibrator.saveOffsetsToEEPROM();
   }
   else
   {
-    // fallback: umbral por defecto
+    Serial.println("[SETUP] ✅ Usando offsets cargados de EEPROM");
+  }
+
+  // 5. (Opcional) obtener config del backend (edad, umbral, etc.)
+  DeviceRuntimeConfig cfg;
+  if (apiClient.fetchConfig(DEVICE_ID, cfg))
+  {
+    postureEval.setAge(cfg.age);
+    if (cfg.thresholdDeg > 0)
+    {
+      postureEval.setThreshold(cfg.thresholdDeg);
+    }
+    // Si algún día backend envía offsets, podrías decidir si los usas o no.
+    // De momento dejamos los de la calibración local.
+  }
+  else
+  {
     postureEval.setAge(DEFAULT_AGE);
-    postureEval.setThreshold(DEFAULT_THRESHOLD_DEG);
   }
 
   Serial.println("Setup completo, entrando a loop...");
@@ -63,11 +84,11 @@ void loop()
   float angleX, angleY;
   if (!mpu.readAngles(angleX, angleY))
   {
-    // si falla lectura, no hacemos nada especial
+    // si falla lectura, salimos del loop
     return;
   }
 
-  // 2. Evaluar postura (aplica offsets + umbral)
+  // 2. Evaluar postura (aplica offsets + umbral por edad)
   PostureStatus status = postureEval.evaluate(angleX, angleY);
 
   // 3. Control del vibrador según estado
@@ -79,7 +100,7 @@ void loop()
 
     if (millis() - badPostureSince > VIBRATION_DELAY_MS)
     {
-      vibrator.patternAlert(); // activa vibración (patrón ya definido en la clase)
+      vibrator.patternAlert(); // patrón ya definido
     }
   }
   else
@@ -95,7 +116,7 @@ void loop()
     lastTelemetry = millis();
   }
 
-  // 5. (Opcional) preguntar al servidor por nuevas configs
+  // 5. (Opcional) consultar al backend si hay nueva config
   apiClient.pullUpdatesIfNeeded(DEVICE_ID, postureEval);
 
   delay(50); // pequeño descanso

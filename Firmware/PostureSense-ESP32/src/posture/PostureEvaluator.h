@@ -14,6 +14,8 @@ public:
   void setAge(int age);
   void setThreshold(float thresholdDeg);  // para cuando venga del backend
   void setOffsets(float offX, float offY);
+  int getAge() const;
+  float getThreshold() const; 
   PostureStatus evaluate(float rawX, float rawY);
 
 private:

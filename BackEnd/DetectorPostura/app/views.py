@@ -48,6 +48,7 @@ class UsuarioViewSet(viewsets.ModelViewSet):
                 'data':serializer.data}, status=status.HTTP_201_CREATED)
         return Response({'error':'Error en la creacion del usuario'}, serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 class RegistroPosturaViewSet(viewsets.ModelViewSet):
     queryset = RegistroPostura.objects.all()
     serializer_class = RegistroPosturaSerializer
@@ -77,17 +78,39 @@ class RegistroPosturaViewSet(viewsets.ModelViewSet):
                     return m.get("v", default)
             return default
 
+        # =============================
         # Extraer valores del paquete
-        tilt = get_value("posture/tilt", 0.0)
+        # =============================
+        tilt = get_value("posture/tilt", 0.0) or 0.0
         bad_posture = bool(get_value("posture/bad_posture", 0))
-        threshold = get_value("posture/threshold", 15.0)
+        threshold = get_value("posture/threshold", 15.0) or 15.0
 
-        # Métricas simples para el registro:
+        tilt = float(tilt)
+        threshold = float(threshold)
+
+        # =============================
+        # Métricas para el registro
+        # =============================
+        # 1 si en ese instante hay mala postura, 0 si no
         numero_alertas = 1 if bad_posture else 0
-        # Score 0-100 donde 100 es postura perfecta
-        score = max(0.0, 100.0 - float(tilt))
 
-        # De momento asociamos al primer usuario de la BD
+        # Score 0-100:
+        #   100   = postura perfecta (tilt <= threshold)
+        #   0     = muy mala postura (tilt >= max_tilt)
+        #   entre = escala lineal
+        max_tilt = 60.0  # a partir de aquí consideramos 0 puntos
+
+        if tilt <= threshold:
+            score = 100.0
+        elif tilt >= max_tilt:
+            score = 0.0
+        else:
+            score = 100.0 * (max_tilt - tilt) / (max_tilt - threshold)
+
+        # =============================
+        # Asociar a un usuario
+        # =============================
+        # Por ahora: primer usuario de la BD (para pruebas)
         usuario = Usuario.objects.first()
         if not usuario:
             return Response(
@@ -115,7 +138,7 @@ class RegistroPosturaViewSet(viewsets.ModelViewSet):
     # endpoint para la comunicación con el front
     @action(detail=False, methods=['get'], url_path='obtener_registros')
     def listar_registros_usuario(self, request):
-        registros = RegistroPostura.objects.all()
+        registros = RegistroPostura.objects.all().order_by('-fechaRegistro')
         serializer = RegistroPosturaSerializer(registros, many=True)
         print("Listando registros de postura...")
         return Response(

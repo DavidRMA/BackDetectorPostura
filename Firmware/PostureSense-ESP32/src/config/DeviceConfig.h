@@ -9,7 +9,7 @@
 
 // 🔹 Backend (Servidor IoT)
 #define BACKEND_BASE_URL   "http://10.15.244.58:8000/api"
-#define TELEMETRY_ENDPOINT "/registros_postura/leer_registro/?usuario_id=1""
+#define TELEMETRY_ENDPOINT "/registros_postura/leer_registro/?usuario_id=1"
 
 #define DEVICE_ID          "esp32-posture-001"
 
