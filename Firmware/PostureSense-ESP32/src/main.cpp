@@ -6,7 +6,6 @@
 #include "posture/PostureEvaluator.h"
 #include "actuators/Vibrator.h"
 #include "posture/Calibration.h"
-#include <EEPROM.h>
 
 WiFiManager wifiManager;
 ApiClient apiClient;
@@ -41,24 +40,16 @@ void setup()
     Serial.println("ERROR: MPU6050 no detectado");
   }
 
-  // 3. EEPROM (emulada) para calibración
-  EEPROM.begin(EEPROM_SIZE); // mismo tamaño que en Calibration.cpp
-
-  // 4. Intentar cargar calibración previa
+  // 3. Intentar cargar calibración previa DESDE Calibration
   bool hasCalib = calibrator.loadOffsetsFromEEPROM();
 
   if (!hasCalib)
   {
-    // Si no había calibración guardada, hacemos una nueva
     calibrator.runCalibration();
     calibrator.saveOffsetsToEEPROM();
   }
-  else
-  {
-    Serial.println("[SETUP] ✅ Usando offsets cargados de EEPROM");
-  }
 
-  // 5. (Opcional) obtener config del backend (edad, umbral, etc.)
+  // 4. (Opcional) obtener config del backend (edad, umbral, etc.)
   DeviceRuntimeConfig cfg;
   if (apiClient.fetchConfig(DEVICE_ID, cfg))
   {
@@ -67,8 +58,6 @@ void setup()
     {
       postureEval.setThreshold(cfg.thresholdDeg);
     }
-    // Si algún día backend envía offsets, podrías decidir si los usas o no.
-    // De momento dejamos los de la calibración local.
   }
   else
   {

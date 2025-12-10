@@ -1,28 +1,42 @@
 #pragma once
 #include <Arduino.h>
+#include "config/DeviceConfig.h"   // para DEFAULT_AGE y DEFAULT_THRESHOLD_DEG
 
-struct PostureStatus {
-  float angleX;
-  float angleY;
-  float maxAngle;
-  float threshold;
-  bool isBadPosture;
+struct PostureStatus
+{
+  float angleX;     // X relativa (ya con offset aplicado)
+  float angleY;     // Y relativa
+  float maxAngle;   // magnitud del vector (tilt)
+  float threshold;  // umbral usado (deg)
+  bool  isBadPosture;
 };
 
-class PostureEvaluator {
+class PostureEvaluator
+{
 public:
+  PostureEvaluator();
+
+  // ---- Calibración: offsets de postura correcta ----
+  void setOffsets(float ox, float oy);
+
+  // ---- Umbral directo (si viene del backend) ----
+  void setThreshold(float deg);
+
+  // ---- Edad: recalcula umbral automáticamente ----
   void setAge(int age);
-  void setThreshold(float thresholdDeg);  // para cuando venga del backend
-  void setOffsets(float offX, float offY);
-  int getAge() const;
-  float getThreshold() const; 
+
+  int   getAge() const;
+  float getThreshold() const;
+
+  // Recibe ángulos CRUDOS del MPU (en grados)
   PostureStatus evaluate(float rawX, float rawY);
 
 private:
-  int _age = 25;
-  float _thresholdDeg = 15.0;
-  float _offsetX = 0.0;
-  float _offsetY = 0.0;
+  float _offsetX;
+  float _offsetY;
+  float _thresholdDeg;
+  int   _age;
 
+  // regla por edades
   float computeThresholdForAge(int age);
 };
