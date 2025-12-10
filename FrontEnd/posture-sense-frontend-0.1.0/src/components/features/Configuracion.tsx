@@ -3,11 +3,21 @@ import { Volume2, Vibrate, Save, User, Settings } from "lucide-react";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { useUserProfile } from '../../hooks/useUserProfile';
+import { useUserProfile } from "../../hooks/useUserProfile";
 import type { IUser } from "../../models/user";
 
 export function Configuracion() {
-  const { userProfile, isNewUser, createUserProfile, updateUserProfile, fetchUserProfileById, loading, error } = useUserProfile();
+  const storedProfile = localStorage.getItem("postureCorrectUserProfile");
+  const userId = storedProfile ? JSON.parse(storedProfile).data.id : undefined;
+
+  const {
+    userProfile,
+    isNewUser,
+    createUserProfile,
+    fetchUserProfileById,
+    loading,
+    error,
+  } = useUserProfile();
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -16,6 +26,9 @@ export function Configuracion() {
   });
 
   useEffect(() => {
+    if (!userProfile && userId) {
+      fetchUserProfileById(userId);
+    }
     if (userProfile && !isNewUser) {
       setFormData({
         nombre: userProfile.nombre || "",
@@ -23,10 +36,12 @@ export function Configuracion() {
         edad: userProfile.edad || 0,
       });
     }
-  }, [userProfile, isNewUser]);
+  }, [userProfile, isNewUser, userId]);
 
-    // Estados para la configuración de Figma
-  const [sensibilidad, setSensibilidad] = useState<"baja" | "media" | "alta">("media");
+  // Estados para la configuración de Figma
+  const [sensibilidad, setSensibilidad] = useState<"baja" | "media" | "alta">(
+    "media"
+  );
   const [sonidoActivado, setSonidoActivado] = useState(true);
   const [vibracionActivada, setVibracionActivada] = useState(false);
 
@@ -44,23 +59,23 @@ export function Configuracion() {
       try {
         const created = await createUserProfile(formData);
         alert("Perfil creado correctamente");
-        console.log("Perfil creado:", created);
         if (created) {
-          await fetchUserProfileById(created.id);
+          await fetchUserProfileById(userId);
         }
       } catch (err: any) {
-        alert(`Error al crear el perfil: ${err?.message || "Error desconocido"}`);
+        alert(
+          `Error al crear el perfil: ${err?.message || "Error desconocido"}`
+        );
       }
     }
   };
-  
 
   const handleReset = () => {
     if (userProfile) {
       setFormData({
         nombre: userProfile.nombre,
         apellido: userProfile.apellido,
-        edad: userProfile.edad
+        edad: userProfile.edad,
       });
     }
   };
@@ -68,10 +83,12 @@ export function Configuracion() {
   const hasChanges = useMemo(() => {
     if (isNewUser) {
       // Si es un nuevo usuario, hay cambios si se ha llenado el formulario
-      return formData.nombre !== "" || formData.apellido !== "" || formData.edad > 0;
+      return (
+        formData.nombre !== "" || formData.apellido !== "" || formData.edad > 0
+      );
     }
     if (!userProfile) return false;
-    
+
     // Si es un usuario existente, compara con los datos del perfil
     return (
       formData.nombre !== userProfile.nombre ||
@@ -90,11 +107,11 @@ export function Configuracion() {
   }
 
   if (error) {
-      return (
+    return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
         <div className="text-center py-8 text-red-600">
-            Error al cargar el perfil: {error}
+          Error al cargar el perfil: {error}
         </div>
       </div>
     );
@@ -104,20 +121,27 @@ export function Configuracion() {
   // Esto previene que el formulario se monte con datos vacíos.
   if (!userProfile && !isNewUser) {
     return (
-        <div className="space-y-6">
-          <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-          <div className="text-center py-8">No se encontró el perfil de usuario.</div>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
+        <div className="text-center py-8">
+          No se encontró el perfil de usuario.
         </div>
+      </div>
     );
   }
 
   const getAgeGroupDescription = (ageGroup: string) => {
     switch (ageGroup) {
-      case 'CHILD': return 'Infante (0-12 años)';
-      case 'TEEN': return 'Adolescente (13-17 años)';
-      case 'ADULT': return 'Adulto (18-59 años)';
-      case 'SENIOR': return 'Adulto Mayor (60+ años)';
-      default: return '';
+      case "CHILD":
+        return "Infante (0-12 años)";
+      case "TEEN":
+        return "Adolescente (13-17 años)";
+      case "ADULT":
+        return "Adulto (18-59 años)";
+      case "SENIOR":
+        return "Adulto Mayor (60+ años)";
+      default:
+        return "";
     }
   };
 
@@ -139,11 +163,10 @@ export function Configuracion() {
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-full bg-[#2563EB]/10 flex items-center justify-center">
             <User className="w-5 h-5 text-[#2563EB]" />
-            <h2 className="text-lg font-semibold text-gray-900">
-              {isNewUser ? "Crear Perfil de Usuario" : "Perfil de Usuario"}
-            </h2>
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">Perfil de Usuario</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {isNewUser ? "Crear Perfil de Usuario" : "Perfil de Usuario"}
+          </h2>
         </div>
 
         <div className="space-y-6">
@@ -151,7 +174,9 @@ export function Configuracion() {
             <label className="block text-gray-900 mb-3">Nombre</label>
             <Input
               value={formData.nombre}
-              onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, nombre: e.target.value })
+              }
               placeholder="Tu nombre"
               disabled={loading || (!isNewUser && !!userProfile)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
@@ -161,7 +186,9 @@ export function Configuracion() {
             <label className="block text-gray-900 mb-3">Apellido</label>
             <Input
               value={formData.apellido}
-              onChange={(e) => setFormData({...formData, apellido: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, apellido: e.target.value })
+              }
               placeholder="Tu apellido"
               disabled={loading || (!isNewUser && !!userProfile)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
@@ -172,7 +199,12 @@ export function Configuracion() {
             <Input
               type="number"
               value={formData.edad}
-              onChange={(e) => setFormData({...formData, edad: parseInt(e.target.value) || 0})}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  edad: parseInt(e.target.value) || 0,
+                })
+              }
               placeholder="Tu edad"
               min="1"
               max="120"
@@ -181,7 +213,8 @@ export function Configuracion() {
             />
             {userProfile && (
               <p className="text-sm text-gray-600 mt-2">
-                <strong>Grupo:</strong> {getAgeGroupDescription(userProfile.ageGroup)}
+                <strong>Grupo:</strong>{" "}
+                {getAgeGroupDescription(userProfile.ageGroup)}
               </p>
             )}
           </div>
@@ -194,7 +227,9 @@ export function Configuracion() {
           <div className="w-10 h-10 rounded-full bg-[#22C55E]/10 flex items-center justify-center">
             <Settings className="w-5 h-5 text-[#22C55E]" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">Umbral de Postura</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Umbral de Postura
+          </h2>
         </div>
 
         <div>
@@ -203,7 +238,9 @@ export function Configuracion() {
           </label>
           <div className="bg-gray-100 p-4 rounded-lg">
             <p className="text-sm text-gray-700">
-              <strong>Configuración automática:</strong> El umbral se ajusta automáticamente según tu edad ({userProfile?.age} años) para garantizar una postura saludable.
+              <strong>Configuración automática:</strong> El umbral se ajusta
+              automáticamente según tu edad ({userProfile?.age} años) para
+              garantizar una postura saludable.
             </p>
             {userProfile && (
               <div className="mt-2 text-xs text-gray-600 space-y-1">
@@ -218,19 +255,25 @@ export function Configuracion() {
 
       {/* Sección 3: Sensibilidad - Estilo Figma */}
       <Card className="p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Sensibilidad del Sistema</h2>
-        
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          Sensibilidad del Sistema
+        </h2>
+
         <div>
-          <label className="block text-gray-900 mb-4">Nivel de Sensibilidad</label>
+          <label className="block text-gray-900 mb-4">
+            Nivel de Sensibilidad
+          </label>
           <div className="flex gap-3">
             {[
               { value: "baja", label: "Baja", desc: "Menos alertas" },
               { value: "media", label: "Media", desc: "Balanceado" },
-              { value: "alta", label: "Alta", desc: "Más alertas" }
+              { value: "alta", label: "Alta", desc: "Más alertas" },
             ].map((nivel) => (
               <button
                 key={nivel.value}
-                onClick={() => setSensibilidad(nivel.value as typeof sensibilidad)}
+                onClick={() =>
+                  setSensibilidad(nivel.value as typeof sensibilidad)
+                }
                 className={`flex-1 py-4 px-4 rounded-lg transition-all border-2 ${
                   sensibilidad === nivel.value
                     ? "bg-[#2563EB] text-white border-[#2563EB]"
@@ -247,15 +290,19 @@ export function Configuracion() {
 
       {/* Sección 4: Notificaciones - Estilo Figma */}
       <Card className="p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Notificaciones</h2>
-        
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          Notificaciones
+        </h2>
+
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
               <Volume2 className="w-5 h-5 text-gray-600" />
               <div>
                 <p className="text-gray-900 font-medium">Sonido</p>
-                <p className="text-gray-600 text-sm">Reproducir alerta de sonido</p>
+                <p className="text-gray-600 text-sm">
+                  Reproducir alerta de sonido
+                </p>
               </div>
             </div>
             <button
@@ -277,7 +324,9 @@ export function Configuracion() {
               <Vibrate className="w-5 h-5 text-gray-600" />
               <div>
                 <p className="text-gray-900 font-medium">Vibración</p>
-                <p className="text-gray-600 text-sm">Activar vibración en alertas</p>
+                <p className="text-gray-600 text-sm">
+                  Activar vibración en alertas
+                </p>
               </div>
             </div>
             <button
@@ -298,17 +347,21 @@ export function Configuracion() {
 
       {/* Botones de acción - Estilo Figma */}
       <div className="flex justify-end gap-4">
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           disabled={!hasChanges || loading || !isNewUser}
           className={`px-6 py-3 flex items-center gap-2 ${
-            hasChanges 
-              ? "bg-[#2563EB] hover:bg-[#1d4ed8]" 
+            hasChanges
+              ? "bg-[#2563EB] hover:bg-[#1d4ed8]"
               : "bg-gray-400 cursor-not-allowed"
           } text-white`}
         >
           <Save className="w-4 h-4" />
-          {isNewUser ? "Crear Perfil" : (hasChanges ? "Guardar Cambios" : "Sin Cambios")}
+          {isNewUser
+            ? "Crear Perfil"
+            : hasChanges
+            ? "Guardar Cambios"
+            : "Sin Cambios"}
         </Button>
       </div>
     </div>

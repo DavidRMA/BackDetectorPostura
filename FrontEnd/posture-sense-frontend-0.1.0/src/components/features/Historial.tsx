@@ -8,7 +8,7 @@ export function Historial() {
   const storedProfile = localStorage.getItem("postureCorrectUserProfile");
   const userId = storedProfile ? JSON.parse(storedProfile).data.id : undefined;
 
-  const { historyData, loading, error, refresh } = useHistoryData(userId);
+  const { historyData, loading, error, refresh } = useHistoryData(1);
 
   useEffect(() => {
     console.log("Datos del historial:", historyData);
